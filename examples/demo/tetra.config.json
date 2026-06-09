@@ -1,0 +1,14 @@
+{
+  "baseBranch": "HEAD",
+  "maxFixIterations": 2,
+  "agents": {
+    "claude": { "command": "claude -p < {{PROMPT_FILE}}" },
+    "codex": { "command": "codex exec < {{PROMPT_FILE}}" }
+  },
+  "pipeline": [
+    { "stage": "write", "use": "claude", "skills": ["testing-strategy"] },
+    { "stage": "gate", "command": "npm test" },
+    { "stage": "review", "use": "codex", "skills": ["code-review"], "failPattern": "REQUEST.?CHANGES|BLOCK" },
+    { "stage": "fix", "use": "claude", "skills": ["code-review", "testing-strategy"] }
+  ]
+}
