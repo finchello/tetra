@@ -1,0 +1,38 @@
+{
+  "name": "tetra-run",
+  "version": "0.1.0",
+  "description": "A configurable, gated, cross-reviewed multi-agent code pipeline: write, gate, review, fix, stop.",
+  "type": "module",
+  "bin": {
+    "tetra": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "tetra.config.example.json",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "cli",
+    "code-review",
+    "pipeline",
+    "orchestration",
+    "claude",
+    "codex"
+  ],
+  "license": "MIT"
+}

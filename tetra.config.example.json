@@ -1,0 +1,32 @@
+{
+  "//": "Copy to tetra.config.json and edit. Every stage's agent is swappable — tetra never forces one pattern.",
+
+  "baseBranch": "main",
+  "maxFixIterations": 3,
+
+  "agents": {
+    "claude": { "command": "claude -p {{PROMPT_FILE}}" },
+    "agy": { "command": "agy run {{PROMPT_FILE}}" },
+    "codex": { "command": "codex exec {{PROMPT_FILE}}" }
+  },
+
+  "//skills": "Vetted, first-party rubrics injected into a stage's prompt when it fires them. Bundled defaults (code-review, testing-strategy) come with tetra; add your own by pointing at a markdown file (path relative to this repo).",
+  "skills": {
+    "code-review": { "path": "./skills/my-code-review.md" }
+  },
+
+  "pipeline": [
+    { "stage": "write", "use": "agy", "skills": ["testing-strategy"] },
+    { "stage": "gate", "command": "npm test" },
+    { "stage": "review", "use": "codex", "skills": ["code-review"], "failPattern": "REQUEST.?CHANGES|BLOCK" },
+    { "stage": "fix", "use": "claude", "skills": ["code-review", "testing-strategy"] }
+  ],
+
+  "//example-swap": "Want Claude to write and AGY to review? Just change the 'use' values below.",
+  "//pipeline-alt": [
+    { "stage": "write", "use": "claude", "skills": ["testing-strategy"] },
+    { "stage": "gate", "command": "pytest -q" },
+    { "stage": "review", "use": "agy", "skills": ["code-review"], "failPattern": "REQUEST.?CHANGES" },
+    { "stage": "fix", "use": "claude" }
+  ]
+}
