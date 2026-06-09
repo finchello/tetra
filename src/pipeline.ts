@@ -115,6 +115,27 @@ export async function runPipeline(config: TetraConfig, opts: RunOptions): Promis
   return done(stages, config.maxFixIterations, "Stopped: exhausted fix iterations.");
 }
 
+/**
+ * Decide whether a reviewer requested changes. The verdict line is
+ * authoritative: scanning from the bottom up, the first line that starts with
+ * APPROVE or REQUEST-CHANGES wins, so an earlier in-prose mention of
+ * "REQUEST-CHANGES" (or "no blocking issues") never trips a false positive.
+ * Only when no verdict line exists do we fall back to the configured
+ * failPattern (for agents that don't follow the verdict convention).
+ */
+function detectVerdict(stdout: string, failPattern?: string): boolean {
+  const lines = stdout.split(/\r?\n/);
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const m = /^\s*(APPROVE|REQUEST-CHANGES)\b/i.exec(lines[i]);
+    if (m) return m[1].toUpperCase().startsWith("REQUEST");
+  }
+  if (failPattern && new RegExp(failPattern, "i").test(stdout)) {
+    return true;
+  }
+  console.warn("[tetra] review produced no detectable verdict; treating as APPROVE");
+  return false;
+}
+
 async function runStage(config: TetraConfig, stage: StageDef, ctx: ExecContext, cwd: string): Promise<StageResult> {
   const cmd = renderCommand(commandFor(config, stage), ctx);
   console.log(`\n[tetra] -- ${label(config, stage)} --`);
@@ -123,7 +144,7 @@ async function runStage(config: TetraConfig, stage: StageDef, ctx: ExecContext, 
 
   let changesRequested = false;
   if (stage.failPattern) {
-    changesRequested = new RegExp(stage.failPattern, "i").test(res.stdout);
+    changesRequested = detectVerdict(res.stdout, stage.failPattern);
   }
   return {
     stage: stage.stage,

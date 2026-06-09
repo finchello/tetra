@@ -15,16 +15,21 @@ export const DEFAULT_CONFIG: TetraConfig = {
   maxFixIterations: 3,
   requireHumanForPush: true,
   agents: {
-    claude: { command: "claude -p {{PROMPT_FILE}}" },
-    agy: { command: "agy run {{PROMPT_FILE}}" },
-    codex: { command: "codex exec {{PROMPT_FILE}}" },
+    claude: { command: "claude -p < {{PROMPT_FILE}}" },
+    // agy reads the prompt from stdin (bare invocation; `-p`/`--print` demands an
+    // inline arg and rejects a redirect). agy's edit behaviour is still unverified
+    // and tracked separately: does it actually apply file edits, does it need
+    // --dangerously-skip-permissions, does bare stdin risk an interactive hang?
+    // Likely proper fix: a {{PROMPT}} inline token used as `agy -p "{{PROMPT}}"`.
+    agy: { command: "agy < {{PROMPT_FILE}}" },
+    codex: { command: "codex exec < {{PROMPT_FILE}}" },
   },
   skills: {
     "code-review": { path: bundledSkill("code-review.md") },
     "testing-strategy": { path: bundledSkill("testing-strategy.md") },
   },
   pipeline: [
-    { stage: "write", use: "agy", skills: ["testing-strategy"] },
+    { stage: "write", use: "claude", skills: ["testing-strategy"] },
     { stage: "gate", command: "npm test" },
     { stage: "review", use: "codex", skills: ["code-review"], failPattern: "REQUEST.?CHANGES|BLOCK" },
     { stage: "fix", use: "claude", skills: ["code-review", "testing-strategy"] },
