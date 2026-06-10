@@ -3,7 +3,7 @@
 All notable changes to this project are documented here.
 This project adheres to semantic versioning.
 
-## [Unreleased]
+## [0.3.0] - 2026-06-10
 
 ### Fixed
 - `--plan` no longer injects a silently broken plan loop when the write agent is
