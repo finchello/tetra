@@ -16,6 +16,7 @@ This project adheres to semantic versioning.
 - Hard safety boundary: tetra never commits, pushes, or opens PRs.
 - `--dry-run` to preview the pipeline plan.
 - Runnable example under `examples/demo`.
+- Verified default `agy` agent invocation (non-interactive `-p` pointer to the prompt file); agy is writer/fix-capable but not reviewer-capable (suppresses stdout off-TTY).
 
 ### Known limitations
 - The Antigravity (`agy`) agent's non-interactive edit behaviour is not yet
