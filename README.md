@@ -1,5 +1,7 @@
 # tetra
 
+[![npm](https://img.shields.io/npm/v/tetra-run)](https://www.npmjs.com/package/tetra-run) [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+
 **A configurable, gated, cross-reviewed multi-agent code pipeline.**
 
 `tetra` runs a disciplined loop over any repository:
@@ -41,7 +43,7 @@ tetra run "..." --no-plan     # skip plan stages for this run
 `--plan` is the **easy path**: it injects default `plan` + `plan-review` stages at
 the front of the pipeline (planner = your write agent, critic = your review agent)
 without touching your config. If the write agent is `agy` (it can't plan — it
-suppresses stdout off-TTY), the review agent plans instead. `--no-plan` strips any
+suppresses stdout off-TTY), the review agent plans instead (and if there is no stdout-capable agent to fall back to, --plan refuses with a clear error rather than injecting a broken plan loop). `--no-plan` strips any
 plan stages for a single run. `--plan` and `--no-plan` can't be combined, and
 `--plan` is a no-op if the pipeline already defines plan stages. For **precise
 control** (different planner skills, a dedicated planning agent, custom
@@ -118,6 +120,7 @@ to think before writing:
   `maxPlanIterations` (default `2`, must be `>= 0`). If it's still not approved when
   iterations run out, tetra proceeds to **write** with the last plan plus a warning —
   it never aborts, because the hard gate still protects you.
+- A planner or critic that *crashes* (nonzero exit) aborts the whole run — a failed agent is never silently treated as approval.
 - The approved plan is injected into the **write** and **fix** prompts as a `## Plan` section.
 
 Both stages are entirely optional: a pipeline without them behaves exactly as before.
@@ -144,7 +147,7 @@ Both stages are entirely optional: a pipeline without them behaves exactly as be
 
 ## Status
 
-Early MVP (v0.1). The core loop (write → gate → review → fix → stop), configurable agents, and an optional `plan` / `plan-review` pre-stage are in place. Planned next: per-run reports and richer skill packs.
+v0.3.0. The core loop (write → gate → review → fix → stop), configurable agents, an optional plan / plan-review pre-stage, and per-run --plan/--no-plan control are in place. Planned next: per-run reports and richer skill packs. See CHANGELOG.md.
 
 ## License
 
