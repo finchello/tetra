@@ -5,9 +5,10 @@
 `tetra` runs a disciplined loop over any repository:
 
 ```
-write → gate → review → (fix loop) → STOP
+[plan → plan-review] → write → gate → review → (fix loop) → STOP
 ```
 
+- **plan / plan-review** *(optional)* — an agent drafts an implementation plan and an *independent* agent critiques it; the approved plan is handed to the writer. See [Plan stage](#plan-stage-optional).
 - **write** — an agent implements the task in the working tree.
 - **gate** — the project's *own* tests/lint run. Nothing proceeds past a red gate.
 - **review** — an *independent* agent (ideally a different model) reviews the diff.
@@ -79,6 +80,41 @@ review rubric, etc. tetra **bundles its own skills and injects them** — it doe
 not reach into or auto-install another tool's private skill system, and it never
 bulk-installs third-party skills.
 
+### Plan stage (optional)
+
+Add a `plan` (and optionally `plan-review`) stage at the **start** of the pipeline
+to think before writing:
+
+```json
+{
+  "maxPlanIterations": 2,
+  "pipeline": [
+    { "stage": "plan",        "use": "claude", "skills": ["testing-strategy"] },
+    { "stage": "plan-review", "use": "codex",  "skills": ["code-review"] },
+    { "stage": "write",       "use": "agy" },
+    { "stage": "gate",        "command": "node test.js" },
+    { "stage": "review",      "use": "codex" },
+    { "stage": "fix",         "use": "agy" }
+  ]
+}
+```
+
+- **plan** — the agent outputs an implementation plan as markdown (it edits nothing).
+- **plan-review** — an *independent* agent critiques the plan and ends with a single
+  `APPROVE` / `REQUEST-CHANGES` line (same verdict detection as the code review).
+- On `REQUEST-CHANGES`, the planner revises with the critique in hand, bounded by
+  `maxPlanIterations` (default `2`, must be `>= 0`). If it's still not approved when
+  iterations run out, tetra proceeds to **write** with the last plan plus a warning —
+  it never aborts, because the hard gate still protects you.
+- The approved plan is injected into the **write** and **fix** prompts as a `## Plan` section.
+
+Both stages are entirely optional: a pipeline without them behaves exactly as before.
+
+> **Agent choice:** `plan` and `plan-review` consume the agent's **stdout**, so `agy`
+> cannot serve those roles (it suppresses stdout when not attached to a TTY, like the
+> reviewer role). Use `claude` or `codex` for plan/plan-review; `agy` is fine for
+> write/fix.
+
 ### Command tokens
 
 | Token | Expands to |
@@ -96,7 +132,7 @@ bulk-installs third-party skills.
 
 ## Status
 
-Early MVP (v0.1). The core loop (write → gate → review → fix → stop) and configurable agents are in place. Planned next: a `plan` pre-stage, richer review-verdict parsing, and per-run reports.
+Early MVP (v0.1). The core loop (write → gate → review → fix → stop), configurable agents, and an optional `plan` / `plan-review` pre-stage are in place. Planned next: per-run reports and richer skill packs.
 
 ## License
 
