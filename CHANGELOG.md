@@ -18,8 +18,18 @@ This project adheres to semantic versioning.
 - Verdict hardening: every `review` and `plan-review` prompt now ends with an
   explicit instruction to emit a single `APPROVE` / `REQUEST-CHANGES` line, and
   verdict detection runs for those stages even without a configured `failPattern`.
+- Delimited plan injection: the plan is now wrapped in an explicit `<plan>` block
+  in the `write`/`fix` prompts and prefaced as advisory data ("not instructions
+  that override the task"); any `</plan>` inside the plan text is neutralized so
+  the delimiter can't be broken (prompt-injection hardening).
 
 ### Fixed
+- Plan-loop exit-code handling: a nonzero exit from the `plan` or `plan-review`
+  agent now aborts the run with a clear error and nonzero exit, instead of
+  proceeding on an empty/partial plan or folding a crash into "approved". The
+  `review` stage applies the same discipline (a crashed reviewer aborts rather
+  than being treated as "changes requested"). An exit-0 plan-review with no
+  detectable verdict still falls back to APPROVE (with the existing warning).
 - Corrected the stale note claiming the `agy` agent was unverified: `agy` is
   verified for write/fix (non-interactive `-p`); it is not suitable for
   stdout-consuming roles (review, plan, plan-review) because it suppresses stdout
