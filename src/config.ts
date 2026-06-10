@@ -104,7 +104,9 @@ const isPlanStage = (s: StageDef): boolean => s.stage === "plan" || s.stage === 
  *   plan (use = the write agent) + plan-review (use = the review agent). If the
  *   write agent is "agy" (stdout-suppressed, can't return a plan), fall back to
  *   the review agent as planner. When planner and critic end up the same agent,
- *   warn about the reduced independence. If plan stages already exist, no-op.
+ *   warn about the reduced independence. If the only resolvable agent for the
+ *   planner or critic is "agy", abort with an error rather than inject a silently
+ *   broken plan loop. If plan stages already exist, no-op.
  * --no-plan: strip any plan / plan-review stages.
  * The two flags are mutually exclusive.
  */
@@ -135,6 +137,16 @@ export function applyPlanFlags(config: TetraConfig, plan: boolean, noPlan: boole
 
   if (!planner) {
     throw new Error("--plan needs the write (or review) stage to use a named agent.");
+  }
+
+  // Never inject a plan loop whose planner or critic is agy: it suppresses stdout
+  // off-TTY, so the plan/critique would come back empty (a silently broken loop).
+  if (planner === "agy" || critic === "agy") {
+    throw new Error(
+      "--plan could not inject plan stages: the write agent 'agy' suppresses stdout " +
+        "and no other agent is available for plan/plan-review. Configure plan stages " +
+        "explicitly in tetra.config.json.",
+    );
   }
 
   const planStages: StageDef[] = [{ stage: "plan", use: planner }];

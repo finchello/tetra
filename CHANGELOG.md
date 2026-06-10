@@ -5,6 +5,13 @@ This project adheres to semantic versioning.
 
 ## [Unreleased]
 
+### Fixed
+- `--plan` no longer injects a silently broken plan loop when the write agent is
+  `agy` and no other named agent is available: it now aborts with a clear error
+  (nonzero exit) instead of wiring `plan`/`plan-review` to a stdout-suppressed
+  agent. The existing fallback (agy writer + a valid review agent as planner)
+  is unchanged.
+
 ### Added
 - `--plan` / `--no-plan` CLI flags for per-run control of the plan pre-stage,
   without editing config. `--plan` injects default `plan` + `plan-review` stages
