@@ -16,12 +16,16 @@ export const DEFAULT_CONFIG: TetraConfig = {
   requireHumanForPush: true,
   agents: {
     claude: { command: "claude -p < {{PROMPT_FILE}}" },
-    // agy reads the prompt from stdin (bare invocation; `-p`/`--print` demands an
-    // inline arg and rejects a redirect). agy's edit behaviour is still unverified
-    // and tracked separately: does it actually apply file edits, does it need
-    // --dangerously-skip-permissions, does bare stdin risk an interactive hang?
-    // Likely proper fix: a {{PROMPT}} inline token used as `agy -p "{{PROMPT}}"`.
-    agy: { command: "agy < {{PROMPT_FILE}}" },
+    agy: {
+      // agy verified 2026-06-10 (probe repo): -p runs non-interactively and applies
+      // edits; exit 0 = success. It SUPPRESSES stdout when not attached to a TTY,
+      // so agy is fine as writer/fix but NOT as reviewer (verdict parsing needs
+      // stdout). Multi-line prompts can't be passed inline under cmd.exe quoting,
+      // so we point -p at the prompt file instead of inlining the prompt.
+      // --dangerously-skip-permissions guards against permission-prompt blocking;
+      // --print-timeout must stay below any outer process timeout.
+      command: 'agy --dangerously-skip-permissions --print-timeout 4m -p "Read the file {{PROMPT_FILE}} and follow the instructions in it exactly."',
+    },
     codex: { command: "codex exec < {{PROMPT_FILE}}" },
   },
   skills: {
