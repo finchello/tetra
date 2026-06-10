@@ -3,7 +3,7 @@
 All notable changes to this project are documented here.
 This project adheres to semantic versioning.
 
-## [Unreleased]
+## [0.2.0] - 2026-06-10
 
 ### Added
 - Optional `plan` / `plan-review` pre-stage at the start of the pipeline: an agent

@@ -1,6 +1,6 @@
 {
   "name": "tetra-run",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A configurable, gated, cross-reviewed multi-agent code pipeline: write, gate, review, fix, stop.",
   "type": "module",
   "bin": {
