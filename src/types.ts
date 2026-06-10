@@ -23,7 +23,7 @@ export interface SkillDef {
   path: string;
 }
 
-export type StageName = "plan" | "write" | "gate" | "review" | "fix";
+export type StageName = "plan" | "plan-review" | "write" | "gate" | "review" | "fix";
 
 /** One step in the pipeline. References a registered agent (use) or a raw command. */
 export interface StageDef {
@@ -39,6 +39,8 @@ export interface StageDef {
 export interface TetraConfig {
   baseBranch: string;
   maxFixIterations: number;
+  /** Max plan-revision rounds when an optional plan/plan-review pre-stage is used. */
+  maxPlanIterations: number;
   /** HARD boundary: tetra never commits, pushes, or opens PRs. Always true. */
   requireHumanForPush: true;
   agents: Record<string, AgentDef>;
@@ -51,7 +53,10 @@ export interface StageResult {
   ok: boolean;
   exitCode: number;
   changesRequested?: boolean;
+  /** Combined stdout + stderr, for feedback to later stages. */
   output: string;
+  /** stdout only — used to capture an agent's plan markdown verbatim. */
+  stdout?: string;
 }
 
 export interface RunResult {

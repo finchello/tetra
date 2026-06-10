@@ -13,17 +13,20 @@ function bundledSkill(file: string): string {
 export const DEFAULT_CONFIG: TetraConfig = {
   baseBranch: "main",
   maxFixIterations: 3,
+  maxPlanIterations: 2,
   requireHumanForPush: true,
   agents: {
     claude: { command: "claude -p < {{PROMPT_FILE}}" },
     agy: {
       // agy verified 2026-06-10 (probe repo): -p runs non-interactively and applies
       // edits; exit 0 = success. It SUPPRESSES stdout when not attached to a TTY,
-      // so agy is fine as writer/fix but NOT as reviewer (verdict parsing needs
-      // stdout). Multi-line prompts can't be passed inline under cmd.exe quoting,
-      // so we point -p at the prompt file instead of inlining the prompt.
-      // --dangerously-skip-permissions guards against permission-prompt blocking;
-      // --print-timeout must stay below any outer process timeout.
+      // so agy is fine as writer/fix but NOT as a stdout-consuming role: it cannot
+      // serve as the reviewer, plan, or plan-review agent (verdict/plan parsing
+      // needs stdout). Use claude/codex for those. Multi-line prompts can't be
+      // passed inline under cmd.exe quoting, so we point -p at the prompt file
+      // instead of inlining the prompt. --dangerously-skip-permissions guards
+      // against permission-prompt blocking; --print-timeout must stay below any
+      // outer process timeout.
       command: 'agy --dangerously-skip-permissions --print-timeout 4m -p "Read the file {{PROMPT_FILE}} and follow the instructions in it exactly."',
     },
     codex: { command: "codex exec < {{PROMPT_FILE}}" },
@@ -75,6 +78,7 @@ export function loadConfig(cwd: string, explicitPath?: string): TetraConfig {
 
 function validate(c: TetraConfig): void {
   if (c.maxFixIterations < 0) throw new Error("maxFixIterations must be >= 0");
+  if (c.maxPlanIterations < 0) throw new Error("maxPlanIterations must be >= 0");
   for (const step of c.pipeline) {
     if (!step.use && !step.command) {
       throw new Error(`Stage "${step.stage}" must define either "use" or "command".`);
