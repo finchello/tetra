@@ -22,7 +22,9 @@
     "dist",
     "skills",
     "tetra.config.example.json",
-    "README.md"
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "keywords": [
     "ai",
