@@ -2,7 +2,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { TetraConfig } from "./types.js";
+import type { TetraConfig, StageDef } from "./types.js";
 
 /** Package root (dist/ -> ..), used to resolve bundled skill packs. */
 const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -91,5 +91,65 @@ function validate(c: TetraConfig): void {
         throw new Error(`Stage "${step.stage}" fires unknown skill "${skill}".`);
       }
     }
+  }
+}
+
+const isPlanStage = (s: StageDef): boolean => s.stage === "plan" || s.stage === "plan-review";
+
+/**
+ * Apply the --plan / --no-plan CLI flags to a freshly-loaded config, mutating
+ * its pipeline for THIS run only (the config file on disk is untouched).
+ *
+ * --plan: if the pipeline has no plan stage, inject defaults at the front —
+ *   plan (use = the write agent) + plan-review (use = the review agent). If the
+ *   write agent is "agy" (stdout-suppressed, can't return a plan), fall back to
+ *   the review agent as planner. When planner and critic end up the same agent,
+ *   warn about the reduced independence. If plan stages already exist, no-op.
+ * --no-plan: strip any plan / plan-review stages.
+ * The two flags are mutually exclusive.
+ */
+export function applyPlanFlags(config: TetraConfig, plan: boolean, noPlan: boolean): void {
+  if (plan && noPlan) {
+    throw new Error("--plan and --no-plan cannot be used together.");
+  }
+
+  const hasPlan = config.pipeline.some(isPlanStage);
+
+  if (noPlan) {
+    if (hasPlan) config.pipeline = config.pipeline.filter((s) => !isPlanStage(s));
+    return;
+  }
+
+  if (!plan || hasPlan) return; // --plan with existing plan stages is a no-op
+
+  const writeAgent = config.pipeline.find((s) => s.stage === "write")?.use;
+  const reviewAgent = config.pipeline.find((s) => s.stage === "review")?.use;
+
+  let planner = writeAgent;
+  const critic = reviewAgent ?? writeAgent;
+  let agyFallback = false;
+  if (planner === "agy") {
+    planner = reviewAgent ?? writeAgent;
+    agyFallback = true;
+  }
+
+  if (!planner) {
+    throw new Error("--plan needs the write (or review) stage to use a named agent.");
+  }
+
+  const planStages: StageDef[] = [{ stage: "plan", use: planner }];
+  if (critic) planStages.push({ stage: "plan-review", use: critic });
+  config.pipeline = [...planStages, ...config.pipeline];
+
+  if (agyFallback) {
+    console.warn(
+      "[tetra] --plan: the write agent 'agy' can't act as planner (it suppresses " +
+        "stdout off-TTY); using the review agent as planner instead.",
+    );
+  }
+  if (planner === critic) {
+    console.warn(
+      `[tetra] --plan: planner and critic are the same agent ('${planner}') — reduced independence.`,
+    );
   }
 }

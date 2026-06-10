@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** tetra — CLI entry point. */
 import { parseArgs } from "node:util";
-import { loadConfig } from "./config.js";
+import { loadConfig, applyPlanFlags } from "./config.js";
 import { runPipeline } from "./pipeline.js";
 
 const HELP = `tetra — a configurable, gated, cross-reviewed multi-agent code pipeline.
@@ -13,6 +13,9 @@ Options:
   --repo <path>     Target repository (default: current directory)
   --base <ref>      Base git ref for the review diff (default: from config / "main")
   --config <path>   Explicit config file (default: tetra.config.json in repo)
+  --plan            Add default plan + plan-review stages for this run (no-op if
+                    the pipeline already has them)
+  --no-plan         Strip any plan / plan-review stages for this run
   --dry-run         Print the pipeline plan without running anything
   -h, --help        Show this help
 
@@ -27,6 +30,8 @@ async function main(): Promise<void> {
       repo: { type: "string" },
       base: { type: "string" },
       config: { type: "string" },
+      plan: { type: "boolean", default: false },
+      "no-plan": { type: "boolean", default: false },
       "dry-run": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -52,6 +57,7 @@ async function main(): Promise<void> {
   const cwd = values.repo ? values.repo : process.cwd();
   const config = loadConfig(cwd, values.config);
   if (values.base) config.baseBranch = values.base;
+  applyPlanFlags(config, Boolean(values.plan), Boolean(values["no-plan"]));
 
   const result = await runPipeline(config, {
     cwd,

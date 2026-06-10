@@ -34,7 +34,19 @@ Requires Node.js ≥ 20, plus whatever CLIs your config references (e.g. `claude
 ```bash
 tetra run "Fix the off-by-one in split() and add a test" --repo . --base main
 tetra run "..." --dry-run     # print the plan without executing anything
+tetra run "..." --plan        # add a plan + plan-review round for this run
+tetra run "..." --no-plan     # skip plan stages for this run
 ```
+
+`--plan` is the **easy path**: it injects default `plan` + `plan-review` stages at
+the front of the pipeline (planner = your write agent, critic = your review agent)
+without touching your config. If the write agent is `agy` (it can't plan — it
+suppresses stdout off-TTY), the review agent plans instead. `--no-plan` strips any
+plan stages for a single run. `--plan` and `--no-plan` can't be combined, and
+`--plan` is a no-op if the pipeline already defines plan stages. For **precise
+control** (different planner skills, a dedicated planning agent, custom
+`maxPlanIterations`), declare the [plan stages explicitly in config](#plan-stage-optional)
+instead.
 
 ## Configure
 

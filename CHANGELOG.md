@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 This project adheres to semantic versioning.
 
+## [Unreleased]
+
+### Added
+- `--plan` / `--no-plan` CLI flags for per-run control of the plan pre-stage,
+  without editing config. `--plan` injects default `plan` + `plan-review` stages
+  at the front (planner = the write agent, critic = the review agent; if the write
+  agent is `agy` it can't plan, so the review agent plans instead, with a
+  reduced-independence warning). `--no-plan` strips any plan stages for the run.
+  The flags are mutually exclusive, and `--plan` is a no-op when plan stages are
+  already configured. Explicit config stages remain the precise path.
+
 ## [0.2.0] - 2026-06-10
 
 ### Added
